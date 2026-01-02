@@ -1,182 +1,862 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>HIV Database</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- React -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-
-  <style>
-    body { font-family: Arial; padding: 20px; background: #f4f6f8; }
-    input, select, button { padding: 6px; margin: 4px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
-    th { background: #eee; }
-    button { cursor: pointer; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HIV Database Management System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+    </style>
 </head>
 <body>
-  <div id="root"></div>
+    <div id="root"></div>
 
-<script type="text/babel">
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1BFe5A0RjmegcN7-Mn2HgYiV8HoHj7YEpHV9vOI0TQDZRFKTmHLOg5KL2rQ5eMgvSkQ/exec";
+        // Lucide React Icons (inline SVG components)
+        const Search = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+        );
+        
+        const Home = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+        );
+        
+        const Plus = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+        );
+        
+        const Database = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/>
+            </svg>
+        );
+        
+        const Edit2 = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+            </svg>
+        );
+        
+        const Trash2 = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+        );
+        
+        const X = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        );
+        
+        const Save = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+            </svg>
+        );
+        
+        const Filter = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+        );
+        
+        const Heart = ({ className, ...props }) => (
+            <svg className={className} fill={props.fill || "none"} stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+        );
+        
+        const RefreshCw = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+        );
+        
+        const AlertCircle = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+        );
 
-function App() {
-  const [patients, setPatients] = React.useState([]);
-  const [filteredPatients, setFilteredPatients] = React.useState([]);
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const [filterSex, setFilterSex] = React.useState("");
-  const [filterStatus, setFilterStatus] = React.useState("");
+        const HIVDatabase = () => {
+          const [currentPage, setCurrentPage] = useState('home');
+          const [patients, setPatients] = useState([]);
+          const [filteredPatients, setFilteredPatients] = useState([]);
+          const [searchTerm, setSearchTerm] = useState('');
+          const [filterSex, setFilterSex] = useState('');
+          const [filterStatus, setFilterStatus] = useState('');
+          const [editingId, setEditingId] = useState(null);
+          const [showForm, setShowForm] = useState(false);
+          const [loading, setLoading] = useState(false);
+          const [error, setError] = useState('');
+          
+          // IMPORTANT: Replace with your deployed Google Apps Script Web App URL
+          const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+          
+          const [formData, setFormData] = useState({
+            name: '',
+            code: '',
+            age: '',
+            sex: '',
+            birthday: '',
+            address: '',
+            dateScreened: '',
+            confirmatoryDate: '',
+            treatmentHub: '',
+            status: ''
+          });
 
-  const [form, setForm] = React.useState({
-    name: "", code: "", age: "", sex: "",
-    birthday: "", address: "", dateScreened: "",
-    confirmatoryDate: "", treatmentHub: "", status: ""
-  });
+          // Load data from Google Sheets via Apps Script
+          const loadData = async () => {
+            setLoading(true);
+            setError('');
+            
+            try {
+              const response = await fetch(`${SCRIPT_URL}?action=read`, {
+                method: 'GET',
+              });
+              
+              const result = await response.json();
+              
+              if (result.success && result.data) {
+                setPatients(result.data);
+                setFilteredPatients(result.data);
+              } else {
+                throw new Error(result.message || 'Failed to load data');
+              }
+            } catch (err) {
+              console.error('Error loading data:', err);
+              setError('Unable to connect to Google Sheets. Using demo data.');
+              
+              // Demo data
+              const demoData = [{
+                id: 2,
+                name: 'Valle, Hanna',
+                code: 'ELRO0206072000',
+                age: '25',
+                sex: 'Female',
+                birthday: '06/07/2000',
+                address: 'Poblacion Oriental',
+                dateScreened: '12/15/2025',
+                confirmatoryDate: '01/05/2026',
+                treatmentHub: 'Mandaue Social Hygiene Clinic',
+                status: 'On going treatment'
+              }];
+              setPatients(demoData);
+              setFilteredPatients(demoData);
+            } finally {
+              setLoading(false);
+            }
+          };
 
-  const [editId, setEditId] = React.useState(null);
+          useEffect(() => {
+            loadData();
+          }, []);
 
-  /* ---------- LOAD DATA ---------- */
-  React.useEffect(() => {
-    fetch(`${SCRIPT_URL}?action=read`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setPatients(data.data);
-          setFilteredPatients(data.data);
-        }
-      });
-  }, []);
+          // Filter logic
+          useEffect(() => {
+            let filtered = patients;
+            
+            if (searchTerm) {
+              filtered = filtered.filter(patient =>
+                Object.values(patient).some(value =>
+                  value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+                )
+              );
+            }
+            
+            if (filterSex) {
+              filtered = filtered.filter(patient => patient.sex === filterSex);
+            }
+            
+            if (filterStatus) {
+              filtered = filtered.filter(patient => patient.status === filterStatus);
+            }
+            
+            setFilteredPatients(filtered);
+          }, [searchTerm, filterSex, filterStatus, patients]);
 
-  /* ---------- FILTER (FIXED) ---------- */
-  React.useEffect(() => {
-    let filtered = [...patients];
+          const handleInputChange = (e) => {
+            const { name, value } = e.target;
+            setFormData(prev => ({
+              ...prev,
+              [name]: value
+            }));
+          };
 
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(p =>
-        ['name', 'code', 'address', 'sex', 'status']
-          .some(k => (p[k] || "").toLowerCase().includes(term))
-      );
-    }
+          const resetForm = () => {
+            setFormData({
+              name: '',
+              code: '',
+              age: '',
+              sex: '',
+              birthday: '',
+              address: '',
+              dateScreened: '',
+              confirmatoryDate: '',
+              treatmentHub: '',
+              status: ''
+            });
+            setEditingId(null);
+            setShowForm(false);
+            setError('');
+          };
 
-    if (filterSex) filtered = filtered.filter(p => p.sex === filterSex);
-    if (filterStatus) filtered = filtered.filter(p => p.status === filterStatus);
+          // CREATE
+          const handleCreate = async () => {
+            if (!formData.name || !formData.code) {
+              setError('Please fill in Name and Code fields');
+              return;
+            }
 
-    setFilteredPatients(filtered);
-  }, [searchTerm, filterSex, filterStatus, patients]);
+            setLoading(true);
+            setError('');
 
-  /* ---------- INPUT HANDLER ---------- */
-  function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  }
+            try {
+              const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'text/plain',
+                },
+                body: JSON.stringify({
+                  action: 'create',
+                  data: formData
+                })
+              });
 
-  /* ---------- CREATE / UPDATE ---------- */
-  function handleSubmit(e) {
-    e.preventDefault();
+              const result = await response.json();
 
-    const action = editId ? "update" : "create";
-    const payload = editId
-      ? { action, id: editId, data: form }
-      : { action, data: form };
+              if (result.success) {
+                alert('✅ Patient record added successfully!');
+                await loadData();
+                resetForm();
+                setCurrentPage('data');
+              } else {
+                throw new Error(result.message || 'Failed to create record');
+              }
+            } catch (err) {
+              console.error('Error creating record:', err);
+              setError('Failed to add record. Please try again.');
+            } finally {
+              setLoading(false);
+            }
+          };
 
-    fetch(SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(() => window.location.reload());
-  }
+          // UPDATE
+          const handleEdit = (patient) => {
+            console.log('Editing patient:', patient);
+            setFormData({
+              name: patient.name || '',
+              code: patient.code || '',
+              age: patient.age || '',
+              sex: patient.sex || '',
+              birthday: patient.birthday || '',
+              address: patient.address || '',
+              dateScreened: patient.dateScreened || '',
+              confirmatoryDate: patient.confirmatoryDate || '',
+              treatmentHub: patient.treatmentHub || '',
+              status: patient.status || ''
+            });
+            setEditingId(patient.id);
+            setShowForm(true);
+            setError('');
+            setCurrentPage('form');
+          };
 
-  /* ---------- EDIT ---------- */
-  function handleEdit(p) {
-    setForm(p);
-    setEditId(p.id);
-  }
+          const handleUpdate = async () => {
+            if (!editingId) {
+              setError('No record selected for editing');
+              return;
+            }
 
-  /* ---------- DELETE ---------- */
-  function handleDelete(id) {
-    if (!confirm("Delete this record?")) return;
+            setLoading(true);
+            setError('');
 
-    fetch(SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete", id })
-    })
-    .then(res => res.json())
-    .then(() => window.location.reload());
-  }
+            try {
+              console.log('Updating record:', { id: editingId, data: formData });
+              
+              const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'text/plain',
+                },
+                body: JSON.stringify({
+                  action: 'update',
+                  id: editingId,
+                  data: formData
+                })
+              });
 
-  return (
-    <div>
-      <h2>HIV Database</h2>
+              const result = await response.json();
+              console.log('Update response:', result);
 
-      {/* FORM */}
-      <form onSubmit={handleSubmit}>
-        {Object.keys(form).map(key => (
-          <input
-            key={key}
-            name={key}
-            placeholder={key}
-            value={form[key]}
-            onChange={handleChange}
-          />
-        ))}
-        <button type="submit">{editId ? "Update" : "Add"}</button>
-      </form>
+              if (result.success) {
+                alert('✅ Patient record updated successfully!');
+                await loadData();
+                resetForm();
+                setCurrentPage('data');
+              } else {
+                throw new Error(result.message || 'Failed to update record');
+              }
+            } catch (err) {
+              console.error('Error updating record:', err);
+              setError('Failed to update record: ' + err.message);
+            } finally {
+              setLoading(false);
+            }
+          };
 
-      {/* FILTERS */}
-      <div>
-        <input placeholder="Search" value={searchTerm}
-               onChange={e => setSearchTerm(e.target.value)} />
-        <select onChange={e => setFilterSex(e.target.value)}>
-          <option value="">All Sex</option>
-          <option>Male</option>
-          <option>Female</option>
-        </select>
-        <select onChange={e => setFilterStatus(e.target.value)}>
-          <option value="">All Status</option>
-          <option>Positive</option>
-          <option>Negative</option>
-        </select>
-      </div>
+          // DELETE
+          const handleDelete = async (id) => {
+            if (!window.confirm('⚠️ Are you sure you want to delete this patient record? This action cannot be undone.')) {
+              return;
+            }
 
-      {/* TABLE */}
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th><th>Code</th><th>Age</th><th>Sex</th>
-            <th>Status</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredPatients.map(p => (
-            <tr key={p.id}>
-              <td>{p.name}</td>
-              <td>{p.code}</td>
-              <td>{p.age}</td>
-              <td>{p.sex}</td>
-              <td>{p.status}</td>
-              <td>
-                <button onClick={() => handleEdit(p)}>Edit</button>
-                <button onClick={() => handleDelete(p.id)}>Delete</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+            setLoading(true);
+            setError('');
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+            try {
+              const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'text/plain',
+                },
+                body: JSON.stringify({
+                  action: 'delete',
+                  id: id
+                })
+              });
 
-</script>
+              const result = await response.json();
+
+              if (result.success) {
+                alert('✅ Patient record deleted successfully!');
+                await loadData();
+              } else {
+                throw new Error(result.message || 'Failed to delete record');
+              }
+            } catch (err) {
+              console.error('Error deleting record:', err);
+              setError('Failed to delete record. Please try again.');
+            } finally {
+              setLoading(false);
+            }
+          };
+
+          const clearFilters = () => {
+            setSearchTerm('');
+            setFilterSex('');
+            setFilterStatus('');
+          };
+
+          // Navigation Component
+          const Navigation = () => (
+            <nav className="bg-gradient-to-r from-pink-300 via-purple-300 to-blue-300 text-white shadow-lg">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between items-center h-16">
+                  <div className="flex items-center space-x-2">
+                    <Heart className="w-8 h-8" fill="rgb(251 207 232)" />
+                    <span className="font-bold text-xl">HIV Database</span>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={loadData}
+                      className="flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-pink-200/30 transition"
+                      title="Refresh data"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
+                      onClick={() => { setCurrentPage('home'); resetForm(); }}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
+                        currentPage === 'home' ? 'bg-white text-pink-500' : 'hover:bg-pink-200/30'
+                      }`}
+                    >
+                      <Home className="w-4 h-4" />
+                      <span>Home</span>
+                    </button>
+                    <button
+                      onClick={() => { setCurrentPage('form'); setShowForm(true); setEditingId(null); }}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
+                        currentPage === 'form' ? 'bg-white text-pink-500' : 'hover:bg-pink-200/30'
+                      }`}
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add New</span>
+                    </button>
+                    <button
+                      onClick={() => { setCurrentPage('data'); resetForm(); }}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
+                        currentPage === 'data' ? 'bg-white text-pink-500' : 'hover:bg-pink-200/30'
+                      }`}
+                    >
+                      <Database className="w-4 h-4" />
+                      <span>View Records</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </nav>
+          );
+
+          // Home Page
+          const HomePage = () => (
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center p-4">
+              <div className="text-center max-w-2xl">
+                <div className="mb-6">
+                  <Heart className="w-20 h-20 mx-auto text-pink-400" fill="rgb(244 114 182)" />
+                </div>
+                <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent mb-6">
+                  HIV Database Management
+                </h1>
+                <p className="text-xl text-gray-600 mb-8">
+                  Secure and compassionate patient information management
+                </p>
+                
+                {SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE' && (
+                  <div className="mb-6 bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-4 text-left">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm text-yellow-800">
+                        <strong className="block mb-1">Setup Required:</strong>
+                        Please deploy the Google Apps Script and update the SCRIPT_URL in the code (line 64).
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button
+                    onClick={() => { setCurrentPage('form'); setShowForm(true); }}
+                    className="bg-gradient-to-r from-pink-300 to-purple-300 text-white px-8 py-4 rounded-full text-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
+                  >
+                    Add New Patient
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage('data')}
+                    className="bg-white text-pink-500 px-8 py-4 rounded-full text-lg font-semibold border-2 border-pink-300 hover:bg-pink-50 transition transform hover:scale-105"
+                  >
+                    View All Records
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+
+          // Form Page
+          const FormPage = () => (
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 py-12 px-4">
+              <div className="max-w-4xl mx-auto">
+                <div className="bg-white rounded-3xl shadow-2xl p-8 border-4 border-pink-200">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+                      {editingId ? 'Edit Patient Record' : 'Add New Patient'}
+                    </h2>
+                    {showForm && (
+                      <button
+                        onClick={resetForm}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    )}
+                  </div>
+
+                  {error && (
+                    <div className="mb-4 bg-red-50 border-2 border-red-200 rounded-2xl p-4 text-red-700 flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5" />
+                      {error}
+                    </div>
+                  )}
+
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Name *
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          disabled={loading}
+                          className="w-full px-4 py-3 border-2 border-pink-200 rounded-2xl focus:border-pink-400 focus:outline-none transition bg-pink-50/30 disabled:opacity-50"
+                          placeholder="Enter full name"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Code *
+                        </label>
+                        <input
+                          type="text"
+                          name="code"
+                          value={formData.code}
+                          onChange={handleInputChange}
+                          disabled={loading}
+                          className="w-full px-4 py-3 border-2 border-pink-200 rounded-2xl focus:border-pink-400 focus:outline-none transition bg-pink-50/30 disabled:opacity-50"
+                          placeholder="Patient code"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Age
+                        </label>
+                        <input
+                          type="number"
+                          name="age"
+                          value={formData.age}
+                          onChange={handleInputChange}
+                          disabled={loading}
+                          className="w-full px-4 py-3 border-2 border-purple-200 rounded-2xl focus:border-purple-400 focus:outline-none transition bg-purple-50/30 disabled:opacity-50"
+                          placeholder="Age"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Sex
+                        </label>
+                        <select
+                          name="sex"
+                          value={formData.sex}
+                          onChange={handleInputChange}
+                          disabled={loading}
+                          className="w-full px-4 py-3 border-2 border-purple-200 rounded-2xl focus:border-purple-400 focus:outline-none transition bg-purple-50/30 disabled:opacity-50"
+                        >
+                          <option value="">Select</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Birthday
+                        </label>
+                        <input
+                          type="text"
+                          name="birthday"
+                          value={formData.birthday}
+                          onChange={handleInputChange}
+                          disabled={loading}
+                          className="w-full px-4 py-3 border-2 border-blue-200 rounded-2xl focus:border-blue-400 focus:outline-none transition bg-blue-50/30 disabled:opacity-50"
+                          placeholder="MM/DD/YYYY"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Address
+                        </label>
+                        <input
+                          type="text"
+                          name="address"
+                          value={formData.address}
+                          onChange={handleInputChange}
+                          disabled={loading}
+                          className="w-full px-4 py-3 border-2 border-blue-200 rounded-2xl focus:border-blue-400 focus:outline-none transition bg-blue-50/30 disabled:opacity-50"
+                          placeholder="Complete address"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Date Screened
+                        </label>
+                        <input
+                          type="text"
+                          name="dateScreened"
+                          value={formData.dateScreened}
+                          onChange={handleInputChange}
+                          disabled={loading}
+                          className="w-full px-4 py-3 border-2 border-pink-200 rounded-2xl focus:border-pink-400 focus:outline-none transition bg-pink-50/30 disabled:opacity-50"
+                          placeholder="MM/DD/YYYY"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Confirmatory Date
+                        </label>
+                        <input
+                          type="text"
+                          name="confirmatoryDate"
+                          value={formData.confirmatoryDate}
+                          onChange={handleInputChange}
+                          disabled={loading}
+                          className="w-full px-4 py-3 border-2 border-purple-200 rounded-2xl focus:border-purple-400 focus:outline-none transition bg-purple-50/30 disabled:opacity-50"
+                          placeholder="MM/DD/YYYY"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Treatment Hub
+                        </label>
+                        <input
+                          type="text"
+                          name="treatmentHub"
+                          value={formData.treatmentHub}
+                          onChange={handleInputChange}
+                          disabled={loading}
+                          className="w-full px-4 py-3 border-2 border-blue-200 rounded-2xl focus:border-blue-400 focus:outline-none transition bg-blue-50/30 disabled:opacity-50"
+                          placeholder="Treatment facility"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Status
+                        </label>
+                        <select
+                          name="status"
+                          value={formData.status}
+                          onChange={handleInputChange}
+                          disabled={loading}
+                          className="w-full px-4 py-3 border-2 border-pink-200 rounded-2xl focus:border-pink-400 focus:outline-none transition bg-pink-50/30 disabled:opacity-50"
+                        >
+                          <option value="">Select Status</option>
+                          <option value="On going treatment">On going treatment</option>
+                          <option value="Completed treatment">Completed treatment</option>
+                          <option value="Follow-up required">Follow-up required</option>
+                          <option value="Transferred">Transferred</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <button
+                        onClick={editingId ? handleUpdate : handleCreate}
+                        disabled={loading}
+                        className="flex-1 bg-gradient-to-r from-pink-300 via-purple-300 to-blue-300 text-white py-4 rounded-full font-semibold text-lg hover:shadow-xl transition transform hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading ? (
+                          <>
+                            <RefreshCw className="w-5 h-5 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-5 h-5" />
+                            {editingId ? 'Update Record' : 'Save Record'}
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={resetForm}
+                        disabled={loading}
+                        className="px-8 py-4 border-2 border-gray-300 rounded-full font-semibold text-gray-600 hover:bg-gray-50 transition disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+
+          // Data Viewer Page
+          const DataPage = () => (
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 py-12 px-4">
+              <div className="max-w-7xl mx-auto">
+                <div className="bg-white rounded-3xl shadow-2xl p-8 border-4 border-purple-200">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+                      Patient Records
+                    </h2>
+                    <button
+                      onClick={loadData}
+                      disabled={loading}
+                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-300 to-purple-300 text-white rounded-full hover:shadow-lg transition disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </button>
+                  </div>
+
+                  {error && (
+                    <div className="mb-4 bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-4 text-yellow-700 flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5" />
+                      {error}
+                    </div>
+                  )}
+                  
+                  {/* Filters */}
+                  <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 mb-6 border-2 border-pink-200">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Filter className="w-5 h-5 text-pink-500" />
+                      <h3 className="text-lg font-semibold text-gray-700">Search & Filter</h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-3.5 w-5 h-5 text-pink-400" />
+                        <input
+                          type="text"
+                          placeholder="Search anything..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-10 pr-4 py-3 border-2 border-pink-300 rounded-2xl focus:border-pink-500 focus:outline-none transition bg-white"
+                        />
+                      </div>
+
+                      <select
+                        value={filterSex}
+                        onChange={(e) => setFilterSex(e.target.value)}
+                        className="px-4 py-3 border-2 border-purple-300 rounded-2xl focus:border-purple-500 focus:outline-none transition bg-white"
+                      >
+                        <option value="">All Genders</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                      </select>
+
+                      <select
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        className="px-4 py-3 border-2 border-blue-300 rounded-2xl focus:border-blue-500 focus:outline-none transition bg-white"
+                      >
+                        <option value="">All Statuses</option>
+                        <option value="On going treatment">On going treatment</option>
+                        <option value="Completed treatment">Completed treatment</option>
+                        <option value="Follow-up required">Follow-up required</option>
+                        <option value="Transferred">Transferred</option>
+                      </select>
+                    </div>
+
+                    {(searchTerm || filterSex || filterStatus) && (
+                      <button
+                        onClick={clearFilters}
+                        className="mt-4 flex items-center gap-2 text-pink-500 hover:text-pink-700 font-semibold"
+                      >
+                        <X className="w-4 h-4" />
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Results Count */}
+                  <div className="mb-4 text-gray-600">
+                    Showing <span className="font-semibold text-pink-500">{filteredPatients.length}</span> of{' '}
+                    <span className="font-semibold text-pink-500">{patients.length}</span> patients
+                  </div>
+
+                  {/* Data Table */}
+                  {loading ? (
+                    <div className="text-center py-12">
+                      <RefreshCw className="w-8 h-8 animate-spin mx-auto text-pink-400" />
+                      <p className="mt-4 text-gray-500">Loading records...</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-2xl">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-gradient-to-r from-pink-300 via-purple-300 to-blue-300 text-white">
+                            <th className="px-4 py-3 text-left rounded-tl-2xl">Name</th>
+                            <th className="px-4 py-3 text-left">Code</th>
+                            <th className="px-4 py-3 text-left">Age</th>
+                            <th className="px-4 py-3 text-left">Sex</th>
+                            <th className="px-4 py-3 text-left">Birthday</th>
+                            <th className="px-4 py-3 text-left">Address</th>
+                            <th className="px-4 py-3 text-left">Date Screened</th>
+                            <th className="px-4 py-3 text-left">Confirmatory</th>
+                            <th className="px-4 py-3 text-left">Treatment Hub</th>
+                            <th className="px-4 py-3 text-left">Status</th>
+                            <th className="px-4 py-3 text-left rounded-tr-2xl">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredPatients.map((patient, index) => (
+                            <tr
+                              key={patient.id}
+                              className={`border-b hover:bg-pink-50 transition ${
+                                index % 2 === 0 ? 'bg-pink-50/30' : 'bg-white'
+                              }`}
+                            >
+                              <td className="px-4 py-3 font-medium">{patient.name}</td>
+                              <td className="px-4 py-3 text-sm">{patient.code}</td>
+                              <td className="px-4 py-3">{patient.age}</td>
+                              <td className="px-4 py-3">{patient.sex}</td>
+                              <td className="px-4 py-3 text-sm">{patient.birthday}</td>
+                              <td className="px-4 py-3 text-sm">{patient.address}</td>
+                              <td className="px-4 py-3 text-sm">{patient.dateScreened}</td>
+                              <td className="px-4 py-3 text-sm">{patient.confirmatoryDate}</td>
+                              <td className="px-4 py-3 text-sm">{patient.treatmentHub}</td>
+                              <td className="px-4 py-3">
+                                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                                  {patient.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleEdit(patient)}
+                                    disabled={loading}
+                                    className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition disabled:opacity-50"
+                                    title="Edit"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(patient.id)}
+                                    disabled={loading}
+                                    className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition disabled:opacity-50"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {filteredPatients.length === 0 && !loading && (
+                    <div className="text-center py-12 text-gray-500">
+                      No patient records found
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+
+          return (
+            <div className="min-h-screen bg-gray-100">
+              <Navigation />
+              {currentPage === 'home' && <HomePage />}
+              {currentPage === 'form' && <FormPage />}
+              {currentPage === 'data' && <DataPage />}
+            </div>
+          );
+        };
+
+        ReactDOM.render(<HIVDatabase />, document.getElementById('root'));
+    </script>
 </body>
 </html>
