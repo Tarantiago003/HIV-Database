@@ -195,10 +195,11 @@
           }, [searchTerm, filterSex, filterStatus, patients]);
 
           const handleInputChange = (e) => {
-            setFormData({
-              ...formData,
-              [e.target.name]: e.target.value
-            });
+            const { name, value } = e.target;
+            setFormData(prev => ({
+              ...prev,
+              [name]: value
+            }));
           };
 
           const resetForm = () => {
@@ -261,28 +262,37 @@
 
           // UPDATE
           const handleEdit = (patient) => {
+            console.log('Editing patient:', patient);
             setFormData({
-              name: patient.name,
-              code: patient.code,
-              age: patient.age,
-              sex: patient.sex,
-              birthday: patient.birthday,
-              address: patient.address,
-              dateScreened: patient.dateScreened,
-              confirmatoryDate: patient.confirmatoryDate,
-              treatmentHub: patient.treatmentHub,
-              status: patient.status
+              name: patient.name || '',
+              code: patient.code || '',
+              age: patient.age || '',
+              sex: patient.sex || '',
+              birthday: patient.birthday || '',
+              address: patient.address || '',
+              dateScreened: patient.dateScreened || '',
+              confirmatoryDate: patient.confirmatoryDate || '',
+              treatmentHub: patient.treatmentHub || '',
+              status: patient.status || ''
             });
             setEditingId(patient.id);
             setShowForm(true);
+            setError('');
             setCurrentPage('form');
           };
 
           const handleUpdate = async () => {
+            if (!editingId) {
+              setError('No record selected for editing');
+              return;
+            }
+
             setLoading(true);
             setError('');
 
             try {
+              console.log('Updating record:', { id: editingId, data: formData });
+              
               const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
                 headers: {
@@ -296,6 +306,7 @@
               });
 
               const result = await response.json();
+              console.log('Update response:', result);
 
               if (result.success) {
                 alert('✅ Patient record updated successfully!');
@@ -307,7 +318,7 @@
               }
             } catch (err) {
               console.error('Error updating record:', err);
-              setError('Failed to update record. Please try again.');
+              setError('Failed to update record: ' + err.message);
             } finally {
               setLoading(false);
             }
