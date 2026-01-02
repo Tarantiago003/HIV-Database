@@ -109,7 +109,7 @@
           const [error, setError] = useState('');
           
           // IMPORTANT: Replace with your deployed Google Apps Script Web App URL
-          const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz8u0UXS_MuIROAb4GD7_jPBTt8Li1VyEBx6rGIvvk45qRfGdduU-L1jfSdzdBRIJIH/exec';
+          const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxfl_0QxGTZ5Koleni5dnsIctzcWIQFUzrBn1az4etmI8ScM9FrrNUvjCZOdauc4ANHMw/exec';
           
           const [formData, setFormData] = useState({
             name: '',
@@ -177,8 +177,25 @@
             
             if (searchTerm) {
               filtered = filtered.filter(patient =>
-                Object.values(patient).some(value =>
-                  value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+                useEffect(() => {
+  if (currentPage !== 'data') return;
+
+  let filtered = patients;
+
+  if (searchTerm) {
+    filtered = filtered.filter(p =>
+      ['name', 'code', 'address', 'sex', 'status'].some(k =>
+        (p[k] || '').toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  }
+
+  if (filterSex) filtered = filtered.filter(p => p.sex === filterSex);
+  if (filterStatus) filtered = filtered.filter(p => p.status === filterStatus);
+
+  setFilteredPatients(filtered);
+}, [searchTerm, filterSex, filterStatus, patients, currentPage]);
+
                 )
               );
             }
@@ -234,7 +251,7 @@
               const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
                 headers: {
-                  'Content-Type': 'text/plain',
+                  'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                   action: 'create',
@@ -296,7 +313,7 @@
               const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
                 headers: {
-                  'Content-Type': 'text/plain',
+                  'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                   action: 'update',
@@ -337,7 +354,7 @@
               const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
                 headers: {
-                  'Content-Type': 'text/plain',
+                  'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                   action: 'delete',
@@ -860,4 +877,5 @@
     </script>
 </body>
 </html>
+
 
